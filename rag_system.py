@@ -76,7 +76,7 @@ class RAGAssistant:
         return documents
 
     def create_vectorstore(self):
-        """Создание векторной базы данных"""
+        """Создание векторной базы данных порциями (фиксит ошибку Batch size)"""
         print("Загрузка документов...")
         documents = self.load_documents()
 
@@ -89,15 +89,23 @@ class RAGAssistant:
         chunks = text_splitter.split_documents(documents)
         print(f"Создано {len(chunks)} чанков")
 
-        print("Создание векторной БД...")
-        vectorstore = Chroma.from_documents(
-            documents=chunks,
-            embedding=self.embeddings,
-            persist_directory=self.db_dir
+        print("Создание векторной БД (порциями)...")
+        # Создаем пустую базу
+        vectorstore = Chroma(
+            persist_directory=self.db_dir,
+            embedding_function=self.embeddings
         )
-        print(f"Векторная БД сохранена в {self.db_dir}")
+        
+        # Добавляем чанки порциями по 5000, чтобы не было ошибки
+        batch_size = 5000
+        for i in range(0, len(chunks), batch_size):
+            batch = chunks[i : i + batch_size]
+            vectorstore.add_documents(batch)
+            print(f"--- Сохранено {min(i + batch_size, len(chunks))} из {len(chunks)} чанков")
+            
+        print(f"Векторная БД успешно сохранена в {self.db_dir}")
         return vectorstore
-
+    
     def create_sample_document(self):
         """Создаёт тестовый документ если нет других"""
         sample_path = self.knowledge_dir / "scrum_guide.txt"
@@ -178,6 +186,7 @@ Scrum Guide (краткое содержание)
             )
             return response['message']['content']
         except Exception as e:
+            print(f"DEBUG ERROR: {e}") # <-- Добавь эту строку
             return f"❌ Ошибка при вызове модели: {e}"
 
 if __name__ == "__main__":
