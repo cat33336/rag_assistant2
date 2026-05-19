@@ -1,5 +1,3 @@
-# rag_system.py supports pdf + epub + txt
-
 import os
 from pathlib import Path
 import ollama
@@ -32,7 +30,7 @@ class RAGAssistant:
         """Загрузка документов из папки knowledge - поддерживает PDF, EPUB, DOCX, TXT, MD"""
         documents = []
 
-        # Создаём папку если её нет
+        # создание папки
         self.knowledge_dir.mkdir(exist_ok=True)
 
         for file_path in self.knowledge_dir.glob("*.*"):
@@ -90,13 +88,13 @@ class RAGAssistant:
         print(f"Создано {len(chunks)} чанков")
 
         print("Создание векторной БД (порциями)...")
-        # Создаем пустую базу
+        # создаем базу
         vectorstore = Chroma(
             persist_directory=self.db_dir,
             embedding_function=self.embeddings
         )
         
-        # Добавляем чанки порциями по 5000, чтобы не было ошибки
+        # добавляем чанки порциями по 5000, чтобы не было ошибки из за лимита
         batch_size = 5000
         for i in range(0, len(chunks), batch_size):
             batch = chunks[i : i + batch_size]
@@ -186,7 +184,7 @@ Scrum Guide (краткое содержание)
             )
             return response['message']['content']
         except Exception as e:
-            print(f"DEBUG ERROR: {e}") # <-- Добавь эту строку
+            print(f"DEBUG ERROR: {e}")
             return f"❌ Ошибка при вызове модели: {e}"
 
 if __name__ == "__main__":

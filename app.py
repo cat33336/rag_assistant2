@@ -1,13 +1,13 @@
 import streamlit as st
 from rag_system import RAGAssistant
 
-# Настройка страницы
+# настройки страницы 
 st.set_page_config(page_title="AI Помощник", page_icon="🤖")
 
 st.title("🤖 Твой личный RAG-ассистент")
 st.markdown("Задавай вопросы по документам из папки `knowledge`")
 
-# Кэшируем инициализацию
+# кэширование инициализации 
 @st.cache_resource
 def init_assistant():
     return RAGAssistant()
@@ -18,23 +18,23 @@ except Exception as e:
     st.error(f"Ошибка при загрузке базы данных: {e}")
     st.stop()
 
-# История чата в памяти браузера
+# история чата
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Отображаем историю
+# отображение истории
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Поле ввода
+# поле чата
 if prompt := st.chat_input("Введите ваш вопрос..."):
-    # Добавляем вопрос пользователя
+    # вопрос пользователя
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
-    # Получаем ответ от нейронки
+    # ответ нейронки
     with st.chat_message("assistant"):
         with st.spinner("Думаю..."):
             try:
@@ -42,7 +42,6 @@ if prompt := st.chat_input("Введите ваш вопрос..."):
                 st.markdown(response)
             except Exception as e:
                 st.error(f"Произошла ошибка: {e}")
-                print(f"ПОЛНЫЙ ЛОГ ОШИБКИ: {e}") # Это появится в терминале VS Code
+                print(f"ПОЛНЫЙ ЛОГ ОШИБКИ: {e}")
     
-    # Сохраняем ответ
     st.session_state.messages.append({"role": "assistant", "content": response})
