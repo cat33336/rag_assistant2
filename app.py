@@ -7,7 +7,7 @@ st.set_page_config(page_title="AI Помощник", page_icon="🤖")
 st.title("🤖 Твой личный RAG-ассистент")
 st.markdown("Задавай вопросы по документам из папки `knowledge`")
 
-# кэширование инициализации 
+# кэширование инициализации
 @st.cache_resource
 def init_assistant():
     return RAGAssistant()
