@@ -1,6 +1,6 @@
 МОЯ ОС - Windows для других - хз че делать
 
-ВАЖНО // СДЕЛАЙ СВОЮ ВЕТКУ В ГИТЕ В КОТОРУЮ БУДЕШЬ ПУШИТЬ И В НЕЙ ДЕЛАЙ. master НЕ ТРОГАЙ.
+ВАЖНО // СДЕЛАЙ СВОЮ ВЕТКУ В ГИТЕ В КОТОРУЮ БУДЕШЬ ПУШИТЬ И В НЕЙ ДЕЛАЙ. main НЕ ТРОГАЙ.
 
 что нужно сделать, чтобы всё работало:
 
@@ -35,3 +35,57 @@ python -m streamlit run app.py
 Если база "не находит" инфу — удали папку chroma_db и запусти сайт заново, пусть переиндексирует нормально.
 
 Вроде всё. Юзайте, тестите, пушьте в свои ветки осторожно.
+
+p.s работа в venv(витр пространство):
+
+Ollama: Скачать с сайта, установить, запустить.
+
+Модель: В терминале: ollama pull llama3.2:1b 
+
+Настройка папки (Виртуальное окружение)
+
+python -m venv venv              # создать "изолятор"
+
+.\venv\Scripts\activate          # активировать (появится надпись (venv))
+
+pip install -r requirements.txt  # все основные библиотеки
+
+pip install streamlit            # сам движок сайта
+
+git checkout -b "твоя ветка"            # создать свою ветку
+
+# Настроить .gitignore (добавить venv/, chroma_db/, ollama_models/)
+
+git add .                        # добавить изменения
+
+git commit -m "site ready"       # сохранить
+
+git push origin "твоя ветка"            # отправка в облако
+
+python -m streamlit run app.py       # запуск сайта
+
+// ТРАБЛЫ
+
+1) Если не активируется окружение (ошибка красным текстом)
+
+Если при вводе .\venv\Scripts\activate пишет «выполнение сценариев отключено»:
+
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
+
+# После этого снова:
+
+.\venv\Scripts\activate
+
+2) Если «не видит» библиотеки (ModuleNotFoundError)
+
+Если пишет, что нет ollama, streamlit или langchain, хотя ты их вроде ставил:
+
+python -m pip install -r requirements.txt       # проверь чтобы лбыло venv
+
+python -m pip install streamlit
+
+3) Если будут такие ошибки "No module named 'langchain_community'"
+
+pip install langchain-community        # также убедись что горит venv от ввода команды
+
+pip install langchain langchain-text-splitters pypdf ebooklib python-docx tiktoken sentence-transformers
