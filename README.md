@@ -54,7 +54,7 @@ pip install streamlit            # сам движок сайта
 
 git checkout -b "твоя ветка"            # создать свою ветку
 
-# Настроить .gitignore (добавить venv/, chroma_db/, ollama_models/)
+НАСТРОИТЬ .gitignore (добавить venv/, chroma_db/, ollama_models/)
 
 git add .                        # добавить изменения
 
