@@ -11,7 +11,6 @@ from langchain_community.document_loaders import (
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 
-
 class RAGAssistant:
     def __init__(self, knowledge_dir: str = "knowledge", db_dir: str = "./chroma_db"):
         self.knowledge_dir = Path(knowledge_dir)
@@ -74,7 +73,6 @@ class RAGAssistant:
         return documents
 
     def create_vectorstore(self):
-        """Создание векторной базы данных порциями (фиксит ошибку Batch size)"""
         print("Загрузка документов...")
         documents = self.load_documents()
 
@@ -85,9 +83,8 @@ class RAGAssistant:
             separators=["\n\n", "\n", " ", ""]
         )
         chunks = text_splitter.split_documents(documents)
-        print(f"Создано {len(chunks)} чанков")
+        print(f"Создано {len(chunks)} чанков \nСоздание векторной БД")
 
-        print("Создание векторной БД (порциями)...")
         # создаем базу
         vectorstore = Chroma(
             persist_directory=self.db_dir,
@@ -131,7 +128,6 @@ Scrum Guide (краткое содержание)
         print(f"✓ Создан тестовый документ: {sample_path}")
 
     def load_or_create_vectorstore(self):
-        """Загрузка существующей БД или создание новой"""
         if os.path.exists(self.db_dir) and len(os.listdir(self.db_dir)) > 0:
             print(f"Загрузка существующей БД из {self.db_dir}")
             self.vectorstore = Chroma(
@@ -143,7 +139,6 @@ Scrum Guide (краткое содержание)
             self.vectorstore = self.create_vectorstore()
 
     def get_relevant_context(self, question: str, k: int = 3) -> str:
-        """Поиск релевантных фрагментов"""
         if not self.vectorstore:
             return ""
 
@@ -155,11 +150,10 @@ Scrum Guide (краткое содержание)
         return context
 
     def ask(self, question: str) -> str:
-        """Задать вопрос ассистенту"""
         context = self.get_relevant_context(question)
 
         if not context:
-            return "❌ Информация не найдена в базе знаний. Уточните вопрос или добавьте документы."
+            return "Информация не найдена в базе знаний. Уточните вопрос или добавьте документы."
 
         system_prompt = """Ты - помощник по управлению ИТ-проектами. Отвечай строго на основе предоставленного контекста.
 Если в контексте нет ответа - скажи, что информация отсутствует.
@@ -185,13 +179,15 @@ Scrum Guide (краткое содержание)
             return response['message']['content']
         except Exception as e:
             print(f"DEBUG ERROR: {e}")
-            return f"❌ Ошибка при вызове модели: {e}"
+            return f"Ошибка при вызове модели: {e}"
 
 if __name__ == "__main__":
     print("=" * 50)
     print("=" * 50)
 
     assistant = RAGAssistant()
+
+
 
     print("\n(для выхода-'exit')")
     print("-" * 50)
