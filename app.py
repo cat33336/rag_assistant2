@@ -33,7 +33,7 @@ if prompt := st.chat_input("Введите ваш вопрос..."):
     with st.chat_message("assistant"):
         with st.spinner("Думаю..."):
             try:
-                response = assistant.ask(prompt)
+                response = assistant.ask_with_sources(prompt)
                 st.markdown(response)
             except Exception as e:
                 st.error(f"Произошла ошибка: {e}")

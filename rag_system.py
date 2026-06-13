@@ -90,17 +90,17 @@ class RAGAssistant:
             persist_directory=self.db_dir,
             embedding_function=self.embeddings
         )
-        
+
         # добавляем чанки порциями по 5000, чтобы не было ошибки из за лимита
         batch_size = 5000
         for i in range(0, len(chunks), batch_size):
             batch = chunks[i : i + batch_size]
             vectorstore.add_documents(batch)
             print(f"--- Сохранено {min(i + batch_size, len(chunks))} из {len(chunks)} чанков")
-            
+
         print(f"Векторная БД успешно сохранена в {self.db_dir}")
         return vectorstore
-    
+
     def create_sample_document(self):
         """Создаёт тестовый документ если нет других"""
         sample_path = self.knowledge_dir / "scrum_guide.txt"
@@ -149,6 +149,32 @@ Scrum Guide (краткое содержание)
         context = "\n\n---\n\n".join([doc.page_content for doc in docs])
         return context
 
+    def get_relevant_context_with_sources(self, question: str, k: int = 3):
+        if not self.vectorstore:
+            return "", []
+
+        docs_with_scores = self.vectorstore.similarity_search_with_relevance_scores(question, k=k)
+
+        if not docs_with_scores:
+            return "", []
+
+        sources = []
+        context_parts = []
+
+        for doc, score in docs_with_scores:
+            source_file = doc.metadata.get('source', 'неизвестный файл')
+
+            sources.append({
+                'file': source_file,
+                'score': score,
+                'content_preview': doc.page_content[:150] + "..." if len(doc.page_content) > 150 else doc.page_content
+            })
+
+            context_parts.append(f"[ИСТОЧНИК: {source_file}]\n{doc.page_content}")
+
+        context = "\n\n---\n\n".join(context_parts)
+        return context, sources
+
     def ask(self, question: str) -> str:
         context = self.get_relevant_context(question)
 
@@ -181,6 +207,50 @@ Scrum Guide (краткое содержание)
             print(f"DEBUG ERROR: {e}")
             return f"Ошибка при вызове модели: {e}"
 
+    def ask_with_sources(self, question: str) -> str:
+        # Получаем контекст с источниками
+        context, sources = self.get_relevant_context_with_sources(question)
+
+        if not context:
+            return "Информация не найдена в базе знаний. Уточните вопрос или добавьте документы."
+
+        # Используем тот же системный промпт
+        system_prompt = """Ты - помощник по управлению ИТ-проектами. Отвечай строго на основе предоставленного контекста.
+    Если в контексте нет ответа - скажи, что информация отсутствует.
+    Не отвечай на вопросы о спорте, погоде, политике или других темах вне проектного менеджмента.
+    Ответы давай на русском языке, кратко и по делу."""
+
+        user_prompt = f"""Контекст:
+    {context}
+
+    Вопрос пользователя: {question}
+
+    Ответь, используя только контекст выше:"""
+
+        try:
+            response = ollama.chat(
+                model='llama3.2:1b',
+                messages=[
+                    {'role': 'system', 'content': system_prompt},
+                    {'role': 'user', 'content': user_prompt}
+                ],
+                options={'temperature': 0.2}
+            )
+            answer = response['message']['content']
+
+            if sources:
+                unique_files = list(set([source['file'] for source in sources]))
+                sources_text = ", ".join(unique_files)
+
+                sources_text = sources_text.replace("knowledge\\", "")
+                answer += f"\n\nИсточники: {sources_text}"
+
+            return answer
+
+        except Exception as e:
+            print(f"DEBUG ERROR: {e}")
+            return f"Ошибка при вызове модели: {e}"
+
 if __name__ == "__main__":
     print("=" * 50)
     print("=" * 50)
@@ -201,7 +271,6 @@ if __name__ == "__main__":
     # interaction
     while True:
         question = input("\n Ваш вопрос: ").strip()
-
         if question.lower() in ['exit', 'quit', 'выход']:
             print("Выход")
             break
@@ -210,6 +279,8 @@ if __name__ == "__main__":
             continue
 
         print(" обработка запроса...")
-        answer = assistant.ask(question)
+
+        answer = assistant.ask_with_sources(question)
         print(f"\n Ассистент: {answer}")
+
         print("-" * 50)
