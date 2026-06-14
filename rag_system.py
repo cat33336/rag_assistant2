@@ -247,13 +247,6 @@ Scrum Guide (краткое содержание)
 
                 answer += f"\n\nИсточники: {sources_text}"
 
-            if sources:
-                unique_files = list(set([source['file'] for source in sources]))
-                sources_text = ", ".join(unique_files)
-
-                sources_text = sources_text.replace("knowledge\\", "")
-                answer += f"\n\nИсточники: {sources_text}"
-
             return answer
 
         except Exception as e:
