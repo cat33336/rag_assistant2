@@ -1,4 +1,5 @@
 import os
+import re
 from pathlib import Path
 import ollama
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -208,13 +209,11 @@ Scrum Guide (краткое содержание)
             return f"Ошибка при вызове модели: {e}"
 
     def ask_with_sources(self, question: str) -> str:
-        # Получаем контекст с источниками
+
         context, sources = self.get_relevant_context_with_sources(question)
 
         if not context:
             return "Информация не найдена в базе знаний. Уточните вопрос или добавьте документы."
-
-        # Используем тот же системный промпт
         system_prompt = """Ты - помощник по управлению ИТ-проектами. Отвечай строго на основе предоставленного контекста.
     Если в контексте нет ответа - скажи, что информация отсутствует.
     Не отвечай на вопросы о спорте, погоде, политике или других темах вне проектного менеджмента.
@@ -242,6 +241,16 @@ Scrum Guide (краткое содержание)
                 unique_files = list(set([source['file'] for source in sources]))
                 sources_text = ", ".join(unique_files)
 
+                sources_text = sources_text.replace("knowledge\\", "").replace("knowledge/", "")
+
+                sources_text = re.sub(r'\.(txt|pdf|epub|docx|md)$', '', sources_text, flags=re.IGNORECASE)
+
+                answer += f"\n\nИсточники: {sources_text}"
+
+            if sources:
+                unique_files = list(set([source['file'] for source in sources]))
+                sources_text = ", ".join(unique_files)
+
                 sources_text = sources_text.replace("knowledge\\", "")
                 answer += f"\n\nИсточники: {sources_text}"
 
@@ -261,12 +270,6 @@ if __name__ == "__main__":
 
     print("\n(для выхода-'exit')")
     print("-" * 50)
-
-    # вопросы : Какие роли в Scrum? in out
-
-    # print("\n Тестовый вопрос: Какие роли в Scrum?")
-    # answer = assistant.ask("Какие роли в Scrum?")
-    # print(f"\n Ассистент: {answer}")
 
     # interaction
     while True:
