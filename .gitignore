@@ -1,6 +1,7 @@
 venv/
 __pycache__/
 chroma_db/
+.vscode/
 .env
 *.pyc
 feedback.csv
