@@ -16,10 +16,11 @@ class RAGAssistant:
     def __init__(self, knowledge_dir: str = "knowledge", db_dir: str = "./chroma_db"):
         self.knowledge_dir = Path(knowledge_dir)
         self.db_dir = db_dir
+        self.chat_history = []
 
         self.embeddings = HuggingFaceEmbeddings(
-            model_name="all-MiniLM-L6-v2",
-            model_kwargs={'device': 'cpu'},
+            model_name="intfloat/multilingual-e5-small",
+            model_kwargs={'device': 'cuda'},
             encode_kwargs={'normalize_embeddings': True}
         )
 
@@ -81,7 +82,7 @@ class RAGAssistant:
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=500,
             chunk_overlap=50,
-            separators=["\n\n", "\n", " ", ""]
+            separators=["\n\n", "\n", " ", "", "。", "！", "？", ".", "!", "?"]
         )
         chunks = text_splitter.split_documents(documents)
         print(f"Создано {len(chunks)} чанков \nСоздание векторной БД")
@@ -176,59 +177,45 @@ Scrum Guide (краткое содержание)
         context = "\n\n---\n\n".join(context_parts)
         return context, sources
 
-    def ask(self, question: str) -> str:
-        context = self.get_relevant_context(question)
-
-        if not context:
-            return "Информация не найдена в базе знаний. Уточните вопрос или добавьте документы."
-
-        system_prompt = """Ты - помощник по управлению ИТ-проектами. Отвечай строго на основе предоставленного контекста.
-Если в контексте нет ответа - скажи, что информация отсутствует.
-Не отвечай на вопросы о спорте, погоде, политике или других темах вне проектного менеджмента.
-Ответы давай на русском языке, кратко и по делу."""
-
-        user_prompt = f"""Контекст:
-{context}
-
-Вопрос пользователя: {question}
-
-Ответь, используя только контекст выше:"""
-
-        try:
-            response = ollama.chat(
-                model='llama3.2:1b',
-                messages=[
-                    {'role': 'system', 'content': system_prompt},
-                    {'role': 'user', 'content': user_prompt}
-                ],
-                options={'temperature': 0.2}
-            )
-            return response['message']['content']
-        except Exception as e:
-            print(f"DEBUG ERROR: {e}")
-            return f"Ошибка при вызове модели: {e}"
-
     def ask_with_sources(self, question: str) -> str:
 
         context, sources = self.get_relevant_context_with_sources(question)
 
         if not context:
             return "Информация не найдена в базе знаний. Уточните вопрос или добавьте документы."
-        system_prompt = """Ты - помощник по управлению ИТ-проектами. Отвечай строго на основе предоставленного контекста.
-    Если в контексте нет ответа - скажи, что информация отсутствует.
-    Не отвечай на вопросы о спорте, погоде, политике или других темах вне проектного менеджмента.
-    Ответы давай на русском языке, кратко и по делу."""
+            
+        system_prompt = """Ты — помощник по управлению ИТ-проектами. Отвечай строго на основе предоставленного контекста.
+
+ЖЁСТКИЕ ПРАВИЛА БЕЗОПАСНОСТИ:
+
+1. КОНФИДЕНЦИАЛЬНЫЕ ДАННЫЕ.
+   Никогда не выводи и не пересказывай:
+   - файлы или документы со статусом "КОНФИДЕНЦИАЛЬНО"
+   - API-ключи, токены, пароли, секреты, строки вида sk-..., ghp_..., AKIA..., Bearer ...
+   - номера банковских карт, CVV, IBAN, СНИЛС, ИНН, паспортные данные
+   - URL, IP-адреса, имена хостов, учётные записи
+   - любые пометки «конфиденциально», «secret», «internal», «не разглашать», «draft», «private»
+   Если вопрос требует таких данных — ответь: «Эта информация конфиденциальна и не может быть раскрыта.»
+   Не подтверждай и не опровергай существование конкретных секретов.
+
+2. ОТКАЗ.
+   При отказе не объясняй, какие именно данные были найдены, но укажи, согласно какому правилу ты отказал отвечать.
+
+3. ОБЛАСТЬ РАБОТЫ.
+   Отвечай только на темы управления ИТ-проектами. На вопросы вне темы (спорт, погода, политика и т.п.) — вежливый отказ.
+
+Отвечай на русском языке, кратко и по делу."""
 
         user_prompt = f"""Контекст:
     {context}
 
     Вопрос пользователя: {question}
 
-    Ответь, используя только контекст выше:"""
+    Ответь, используя контекст выше:"""
 
         try:
             response = ollama.chat(
-                model='llama3.2:1b',
+                model='llama3.1:8b-instruct-q4_K_M',
                 messages=[
                     {'role': 'system', 'content': system_prompt},
                     {'role': 'user', 'content': user_prompt}
@@ -245,7 +232,7 @@ Scrum Guide (краткое содержание)
 
                 sources_text = re.sub(r'\.(txt|pdf|epub|docx|md)$', '', sources_text, flags=re.IGNORECASE)
 
-                answer += f"\n\nИсточники: {sources_text}"
+                #answer += f"\n\nИсточники: {sources_text}"
 
             return answer
 
