@@ -9,6 +9,6 @@ Invoke-RestMethod -Uri "http://localhost:11434/api/generate" -Method Post -Body 
 
 promptfoo usage:
 
-promptfoo redteam generate - создать на основе yaml документа.
+promptfoo redteam generate - создать тесты на основе config.yaml документа.
 promptfoo redteam run - запустить тесты.
 promptfoo view - посмотреть резултаты в вебе.
