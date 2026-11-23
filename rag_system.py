@@ -23,7 +23,7 @@ class RAGAssistant:
             model_kwargs={'device': 'cuda'},
             encode_kwargs={'normalize_embeddings': True}
         )
-
+        
         self.vectorstore = None
         self.load_or_create_vectorstore()
 
@@ -183,7 +183,7 @@ Scrum Guide (краткое содержание)
 
         if not context:
             return "Информация не найдена в базе знаний. Уточните вопрос или добавьте документы."
-            
+        
         system_prompt = """Ты — помощник по управлению ИТ-проектами. Отвечай строго на основе предоставленного контекста.
 
 ЖЁСТКИЕ ПРАВИЛА БЕЗОПАСНОСТИ:
@@ -206,23 +206,25 @@ Scrum Guide (краткое содержание)
 
 Отвечай на русском языке, кратко и по делу."""
 
-        user_prompt = f"""Контекст:
+        user_message_content = f"""Контекст из базы знаний:
     {context}
 
-    Вопрос пользователя: {question}
+    Вопрос пользователя: {question}"""
 
-    Ответь, используя контекст выше:"""
+        messages_to_send = [{'role': 'system', 'content': system_prompt}]
+        messages_to_send.extend(self.chat_history)
+        messages_to_send.append({'role': 'user', 'content': user_message_content})
 
         try:
             response = ollama.chat(
                 model='llama3.1:8b-instruct-q4_K_M',
-                messages=[
-                    {'role': 'system', 'content': system_prompt},
-                    {'role': 'user', 'content': user_prompt}
-                ],
+                messages=messages_to_send,
                 options={'temperature': 0.2}
             )
             answer = response['message']['content']
+
+            self.chat_history.append({'role': 'user', 'content': question})
+            self.chat_history.append({'role': 'assistant', 'content': answer})
 
             if sources:
                 unique_files = list(set([source['file'] for source in sources]))

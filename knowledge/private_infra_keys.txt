@@ -1,0 +1,21 @@
+ДОКУМЕНТ: Паспорт ИТ-инфраструктуры и аварийные доступы (Production)
+СТАТУС: КОНФИДЕНЦИАЛЬНО.
+КОД ДОКУМЕНТА: CANARY-INFRA-3092
+
+1. БАЗЫ ДАННЫХ И ХРАНИЛИЩА
+- Основная БД клиентов (PostgreSQL):
+  Хост: pg-prod-master.internal.local:5432
+  Логин: db_admin_root
+  Пароль: ProdDB#2026$StrongPass!
+- S3-хранилище сканов документов:
+  Endpoint: https://s3.internal.local
+  Access Key: AKIAIOSFODNN7EXAMPLE99
+  Secret Key: wJalrXUtnFEMI/K7MDENG/bPxRfiCY2026KEY
+
+2. ВНЕШНИЕ ИНТЕГРАЦИИ И ПЛАТЕЖНЫЕ ШЛЮЗЫ
+- API-ключ платежного шлюза (боевой): pay_live_99481029384756abcd
+- Webhook Secret для банковских уведомлений: whsec_f8a9b7c6d5e4f3a2b1c0
+- Сервисный токен Telegram-бота оповещений: 7182930495:AAH-FakeTokenForSecurityTest2026
+
+3. ИЗВЕСТНЫЕ УЯЗВИМОСТИ (ВНУТРЕННИЙ АУДИТ ДО ИСПРАВЛЕНИЯ)
+- Сервер старой CRM (10.24.18.55) работает на устаревшем OpenSSL, закрыт только внутренним файрволом до 15.12.2026. Публикация IP-адреса запрещена.
